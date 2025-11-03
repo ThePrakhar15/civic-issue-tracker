@@ -3,7 +3,9 @@ name: Deploy React App to GitHub Pages
 on:
   push:
     branches:
-      - main  # Runs when you push to the main branch
+      - main       # Runs when you push to main branch
+    paths:
+      - 'frontend/**'   # ✅ Runs only when frontend files change
 
 jobs:
   build:
@@ -29,8 +31,7 @@ jobs:
           CI=false npm run build   # ✅ disables strict lint errors
 
       - name: Deploy to GitHub Pages
-        run: |
-          cd frontend
-          npx gh-pages -d build
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./frontend/build
