@@ -1,17 +1,15 @@
 {
   "version": 2,
-  "builds": [
+  "buildCommand": "npm run build --prefix frontend",
+  "outputDirectory": "frontend/build",
+  "framework": "create-react-app",
+  "routes": [
     {
-      "src": "frontend/package.json",
-      "use": "@vercel/static-build"
+      "src": "/(.*)",
+      "dest": "/frontend/build/index.html"
     }
   ],
   "env": {
     "CI": "false"
-  },
-  "buildCommand": "npm run build --prefix frontend",
-  "outputDirectory": "frontend/build",
-  "routes": [
-    { "src": "/(.*)", "dest": "frontend/build/index.html" }
-  ]
+  }
 }
