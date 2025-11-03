@@ -3,14 +3,15 @@
   "builds": [
     {
       "src": "frontend/package.json",
-      "use": "@vercel/static-build",
-      "config": { "distDir": "frontend/build" }
+      "use": "@vercel/static-build"
     }
   ],
+  "env": {
+    "CI": "false"
+  },
+  "buildCommand": "npm run build --prefix frontend",
+  "outputDirectory": "frontend/build",
   "routes": [
-    {
-      "src": "/(.*)",
-      "dest": "frontend/build/index.html"
-    }
+    { "src": "/(.*)", "dest": "frontend/build/index.html" }
   ]
 }
