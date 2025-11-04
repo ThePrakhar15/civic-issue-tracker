@@ -5,10 +5,12 @@ import bcrypt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
-from . import models  # Fixed import
-from .database import get_db  # Fixed import
+import os
+from . import models
+from .database import get_db
 
-SECRET_KEY = "civic-issue-tracker-ultra-polished-secret-2024"
+# Use environment variable for production
+SECRET_KEY = os.environ.get("JWT_SECRET_KEY", "civic-issue-tracker-ultra-polished-secret-2024")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 300
 
