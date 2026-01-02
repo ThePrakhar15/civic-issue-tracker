@@ -1,13 +1,15 @@
-// API Configuration
-export const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+// API Configuration - HARDCODED FOR LOCAL DEVELOPMENT
+export const API_BASE_URL = 'http://localhost:8000';
 
 // Export API endpoints
 export const API_ENDPOINTS = {
   AUTH: {
-    LOGIN: `${API_BASE_URL}/auth/login`,
-    SIGNUP: `${API_BASE_URL}/auth/signup`,
-    VERIFY: `${API_BASE_URL}/auth/verify`
-  },
+  LOGIN: `${API_BASE_URL}/auth/login`,
+  SIGNUP: `${API_BASE_URL}/auth/signup`,
+  VERIFY: `${API_BASE_URL}/auth/verify`,
+  FIREBASE_LOGIN: `${API_BASE_URL}/auth/firebase-login`, 
+},
+
   ISSUES: {
     LIST: `${API_BASE_URL}/issues`,
     CREATE: `${API_BASE_URL}/issues`,
@@ -20,4 +22,3 @@ export const API_ENDPOINTS = {
     CLASSIFY: `${API_BASE_URL}/ai/classify`
   }
 };
-

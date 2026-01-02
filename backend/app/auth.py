@@ -1,86 +1,110 @@
 from datetime import datetime, timedelta
 from typing import Optional
-from jose import JWTError, jwt
-import bcrypt
-from fastapi import Depends, HTTPException, status
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from sqlalchemy.orm import Session
-import os
-from . import models
-from .database import get_db
 
-# Use environment variable for production
-SECRET_KEY = os.environ.get("JWT_SECRET_KEY", "civic-issue-tracker-ultra-polished-secret-2024")
+from fastapi import Depends, HTTPException, status, APIRouter
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from jose import jwt, JWTError
+from sqlalchemy.orm import Session
+
+from .database import get_db
+from . import models
+# from .firebase import verify_firebase_token
+
+# ======================
+# JWT CONFIG (backend)
+# ======================
+SECRET_KEY = "civic-issue-tracker-ultra-polished-secret-2024"
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 300
 
 security = HTTPBearer()
+router = APIRouter()
 
-def verify_password(plain_password, hashed_password):
-    """Verify a password against a bcrypt hash"""
-    if isinstance(hashed_password, str):
-        hashed_password = hashed_password.encode('utf-8')
-    return bcrypt.checkpw(plain_password.encode('utf-8'), hashed_password)
-
-def get_password_hash(password):
-    """Hash a password using bcrypt"""
-    salt = bcrypt.gensalt()
-    return bcrypt.hashpw(password.encode('utf-8'), salt).decode('utf-8')
-
+# ======================
+# JWT helpers
+# ======================
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     to_encode = data.copy()
-    if expires_delta:
-        expire = datetime.utcnow() + expires_delta
-    else:
-        expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    expire = datetime.utcnow() + (
+        expires_delta or timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    )
     to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
-    return encoded_jwt
+    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
+
+# ======================
+# FIREBASE → BACKEND LOGIN
+# ======================
+@router.post("/auth/firebase-login")
+def firebase_login(
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    db: Session = Depends(get_db),
+):
+    try:
+        token = credentials.credentials
+        decoded = verify_firebase_token(token)
+
+        email = decoded.get("email")
+        if not email:
+            raise HTTPException(status_code=401, detail="Email missing in token")
+
+        user = db.query(models.User).filter(models.User.email == email).first()
+        if not user:
+            raise HTTPException(
+                status_code=403,
+                detail="User not registered in backend",
+            )
+
+        access_token = create_access_token({"sub": user.email})
+
+        return {
+            "access_token": access_token,
+            "user": {
+                "id": user.id,
+                "email": user.email,
+                "role": user.role,
+            },
+        }
+
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid Firebase token",
+        )
+
+
+# ======================
+# PROTECTED ROUTES
+# ======================
 def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(security),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
-    credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Could not validate credentials",
-        headers={"WWW-Authenticate": "Bearer"},
-    )
-    
     try:
-        payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
+        payload = jwt.decode(
+            credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM]
+        )
         email: str = payload.get("sub")
         if email is None:
-            raise credentials_exception
-    except JWTError:
-        raise credentials_exception
-    
-    user = db.query(models.User).filter(models.User.email == email).first()
-    if user is None:
-        raise credentials_exception
-    return user
+            raise HTTPException(status_code=401)
 
-def get_current_user_optional(
-    credentials: Optional[HTTPAuthorizationCredentials] = None,
-    db: Session = Depends(get_db)
-):
-    """Get current user if token is present, otherwise return None"""
-    if credentials is None:
-        return None
-    try:
-        payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
-        email: str = payload.get("sub")
-        if email is None:
-            return None
         user = db.query(models.User).filter(models.User.email == email).first()
+        if not user:
+            raise HTTPException(status_code=401)
+
         return user
-    except:
-        return None
+
+    except JWTError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired token",
+        )
+
 
 def get_current_admin(user: models.User = Depends(get_current_user)):
     if user.role != "admin":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not enough permissions"
+            detail="Admin access required",
         )
     return user

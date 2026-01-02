@@ -12,39 +12,63 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      axios.get(API_ENDPOINTS.AUTH.VERIFY, {
-        headers: { Authorization: `Bearer ${token}` }
-      })
-      .then(response => {
-        setUser(response.data.user);
-      })
-      .catch(() => {
-        localStorage.removeItem('token');
-      })
-      .finally(() => {
-        setLoading(false);
-      });
-    } else {
+useEffect(() => {
+  const token = localStorage.getItem("token");
+
+  if (!token) {
+    setLoading(false);
+    return;
+  }
+
+  axios
+    .get("http://localhost:8000/protected", {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
+    .then((res) => {
+      setUser(res.data);
+    })
+    .catch(() => {
+      localStorage.removeItem("token");
+      setUser(null);
+    })
+    .finally(() => {
       setLoading(false);
+    });
+}, []);
+
+
+const login = async (email, password) => {
+  // 1️⃣ Firebase login (email/password)
+  const { auth } = await import("../firebase");
+  const { signInWithEmailAndPassword } = await import("firebase/auth");
+
+  const cred = await signInWithEmailAndPassword(auth, email, password);
+
+  // 2️⃣ Get Firebase ID token
+  const firebaseToken = await cred.user.getIdToken();
+
+  // 3️⃣ Send Firebase token to backend
+  const response = await axios.post(
+    API_ENDPOINTS.AUTH.FIREBASE_LOGIN,
+    {},
+    {
+      headers: {
+        Authorization: `Bearer ${firebaseToken}`,
+      },
     }
-  }, []);
+  );
 
-  const login = async (email, password) => {
-    const formData = new FormData();
-    formData.append('email', email);
-    formData.append('password', password);
+  // 4️⃣ Backend responds with role + its own JWT
+  const { access_token, user } = response.data;
 
-    const response = await axios.post(API_ENDPOINTS.AUTH.LOGIN, formData);
-    const { access_token, user } = response.data;
-    
-    localStorage.setItem('token', access_token);
-    setUser(user);
-    
-    return user;
-  };
+  localStorage.setItem("token", access_token);
+  setUser(user);
+
+  return user;
+};
+
 
   const signup = async (name, email, password, role = 'citizen') => {
     const formData = new FormData();
