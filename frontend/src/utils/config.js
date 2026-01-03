@@ -1,5 +1,5 @@
 // API Configuration - HARDCODED FOR LOCAL DEVELOPMENT
-export const API_BASE_URL = 'http://localhost:8000';
+export const API_BASE_URL = "https://civic-issue-tracker-4pke.onrender.com";
 
 // Export API endpoints
 export const API_ENDPOINTS = {
@@ -7,7 +7,8 @@ export const API_ENDPOINTS = {
   LOGIN: `${API_BASE_URL}/auth/login`,
   SIGNUP: `${API_BASE_URL}/auth/signup`,
   VERIFY: `${API_BASE_URL}/auth/verify`,
-  FIREBASE_LOGIN: `${API_BASE_URL}/auth/firebase-login`, 
+  FIREBASE_LOGIN: `${API_BASE_URL}/auth/firebase-login`,
+  PROTECTED: `${API_BASE_URL}/protected`,
 },
 
   ISSUES: {

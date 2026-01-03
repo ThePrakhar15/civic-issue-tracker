@@ -36,7 +36,11 @@ const Login = () => {
 
   const handleDemoLogin = async (type) => {
     const demoEmail = type === 'admin' ? 'admin@civicfix.com' : 'demo@citizen.com';
-    const demoPassword = type === 'admin' ? 'admin123' : 'demo123';
+  const demoPassword =
+  type === 'admin'
+    ? 'admin123'
+    : 'citizen123';   
+
     
     setEmail(demoEmail);
     setPassword(demoPassword);

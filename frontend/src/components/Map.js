@@ -6,6 +6,7 @@ import 'leaflet.markercluster/dist/MarkerCluster.css';
 import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
 import axios from 'axios';
 import 'leaflet.markercluster';
+import { API_BASE_URL } from '../utils/config';
 
 // Fix for default markers
 delete L.Icon.Default.prototype._getIconUrl;
@@ -37,7 +38,14 @@ const IssueMap = () => {
   const fetchIssues = async () => {
     try {
       const { API_ENDPOINTS } = await import('../utils/config');
-      const response = await axios.get(API_ENDPOINTS.ISSUES.LIST);
+      const token = localStorage.getItem("token");
+
+const response = await axios.get(API_ENDPOINTS.ISSUES.LIST, {
+  headers: {
+    Authorization: `Bearer ${token}`,
+  },
+});
+
       setIssues(response.data);
     } catch (error) {
       console.error('Error fetching issues:', error);
@@ -105,7 +113,8 @@ const IssueMap = () => {
             <p style="margin: 5px 0; font-size: 12px; color: #666;">
               Reported by: ${issue.user?.name || 'Unknown'}
             </p>
-            ${issue.image ? `<img src="${process.env.REACT_APP_API_URL || 'http://localhost:8000'}${issue.image}" alt="${issue.title || 'Issue'}" style="width: 100%; border-radius: 5px; margin-top: 5px;" />` : ''}
+            ${issue.image ? `<img src="${API_BASE_URL}${issue.image}" alt="${issue.title || 'Issue'}" style="width: 100%; border-radius: 5px; margin-top: 5px;" />` : ''}
+
           </div>
         `;
 

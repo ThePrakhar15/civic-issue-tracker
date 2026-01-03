@@ -24,7 +24,14 @@ const Home = () => {
   const fetchStats = async () => {
     try {
       const { API_ENDPOINTS } = await import('../utils/config');
-      const response = await axios.get(API_ENDPOINTS.ISSUES.LIST);
+      const token = localStorage.getItem("token");
+
+const response = await axios.get(API_ENDPOINTS.ISSUES.LIST, {
+  headers: {
+    Authorization: `Bearer ${token}`,
+  },
+});
+
       const issues = response.data;
       
       setStats({
